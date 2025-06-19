@@ -181,4 +181,179 @@ export class DataService {
       })
     );
   }
+
+  // Adicione estes métodos à sua classe DataService, junto com os outros
+
+// NOVO: Processa dados de Orientação Afetivo-Sexual
+getSexualOrientationData(): Observable<any[]> {
+  return this.getData().pipe(
+    map(data => this.processData(data, 'Orientação afetivo-sexual'))
+  );
+}
+
+// NOVO: Processa dados de Crenças/Religiões (lidando com múltiplas respostas)
+getFaithData(): Observable<any[]> {
+  return this.getData().pipe(
+    map(data => {
+      const allFaiths = data
+        .map(item => item['Fé/religião'])
+        .filter(Boolean) // Remove nulos/vazios
+        .flatMap(faiths => faiths.split(',').map((f: string) => f.trim())); // Divide e limpa
+
+      const counts = allFaiths.reduce((acc, faith) => {
+        acc[faith] = (acc[faith] || 0) + 1;
+        return acc;
+      }, {} as { [key: string]: number });
+
+      return Object.keys(counts)
+        .map(k => ({ name: k, value: counts[k] }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 15); // Pega os 15 mais relevantes para não poluir o gráfico
+    })
+  );
+}
+
+// NOVO: Processa dados de Hobbies (lidando com múltiplas respostas)
+getHobbiesData(): Observable<any[]> {
+    return this.getData().pipe(
+        map(data => {
+            const allHobbies = data
+                .map(item => item['Hobbies'])
+                .filter(Boolean)
+                .flatMap(hobbies => hobbies.split(',').map((h: string) => h.trim()));
+
+            const counts = allHobbies.reduce((acc, hobby) => {
+                acc[hobby] = (acc[hobby] || 0) + 1;
+                return acc;
+            }, {} as { [key: string]: number });
+
+            return Object.keys(counts)
+                .map(k => ({ name: k, value: counts[k] }))
+                .sort((a, b) => b.value - a.value)
+                .slice(0, 15); // Pega os 15 mais relevantes
+        })
+    );
+}
+
+// NOVO: Processa dados de Proficiência em Inglês
+getLanguageDistributionData(): Observable<any> {
+    return this.getData().pipe(
+        map(data => {
+            const languages = ['Inglês', 'Espanhol', 'Francês', 'Italiano', 'Alemão', 'Mandarim'];
+            const totalRespondents = data.length;
+
+            const seriesData = [
+                { name: 'Possuem', type: 'bar' as const, stack: 'total', label: { show: true, formatter: '{c}%' }, emphasis: { focus: 'series' as const }, data: [] as number[] },
+                { name: 'Não Possuem', type: 'bar' as const, stack: 'total', label: { show: true, formatter: '{c}%' }, emphasis: { focus: 'series' as const }, data: [] as number[] }
+            ];
+
+            languages.forEach(lang => {
+                const key = `Idiomas [${lang}]`;
+                const possessCount = data.filter(item => item[key] && item[key] !== 'Não possuo').length;
+
+                const possessPercent = parseFloat(((possessCount / totalRespondents) * 100).toFixed(1));
+                const nonPossessPercent = 100 - possessPercent;
+
+                seriesData[0].data.push(possessPercent);
+                seriesData[1].data.push(nonPossessPercent);
+            });
+
+            return {
+                languages: languages,
+                series: seriesData
+            };
+        })
+    );
+}
+
+// NOVO: Processa dados de familiaridade com os documentos
+getLanguageProficiencyDetails(): Observable<any> {
+    return this.getData().pipe(
+        map(data => {
+            const languages = ['Inglês', 'Espanhol', 'Francês', 'Italiano', 'Alemão', 'Mandarim'];
+            const levels = ['Fluente/Nativo', 'Avançado', 'Intermediário', 'Básico'];
+
+            // Prepara a estrutura da série, onde cada série é um nível de proficiência
+            const seriesData = levels.map(level => ({
+                name: level,
+                type: 'bar' as const,
+                label: { show: true, formatter: (params: any) => params.value > 0 ? params.value : '' },
+                emphasis: { focus: 'series' as const },
+                data: [] as number[]
+            }));
+
+            // Itera sobre cada idioma para contar os níveis
+            languages.forEach(lang => {
+                const key = `Idiomas [${lang}]`;
+                const levelCounts: { [key: string]: number } = {
+                    'Fluente/Nativo': 0,
+                    'Avançado': 0,
+                    'Intermediário': 0,
+                    'Básico': 0,
+                };
+
+                // Conta quantos membros estão em cada nível para o idioma atual
+                data.forEach(item => {
+                    const proficiency = item[key];
+                    if (proficiency && levels.includes(proficiency)) {
+                        levelCounts[proficiency]++;
+                    }
+                });
+
+                // Adiciona os dados contados para cada série (nível)
+                seriesData.forEach(series => {
+                    series.data.push(levelCounts[series.name]);
+                });
+            });
+
+            return {
+                languages: languages, // Eixo X
+                series: seriesData   // Séries empilhadas
+            };
+        })
+    );
+}
+
+getDocumentFamiliarityData(): Observable<any> {
+    return this.getData().pipe(
+        map(data => {
+            const documents = ['Hub Charter (do seu hub)', 'Onboarding Guide', 'Curatorship Elections', 'Impact Model', 'Twin Hubs'];
+            const levels = ['Conheço bastante', 'Já li', 'Já ouvi falar/sei que existe', 'Nunca ouvi falar'];
+
+            const seriesData = levels.map(level => ({
+                name: level,
+                type: 'bar' as const,
+                label: { show: true, formatter: (params: any) => params.value > 0 ? params.value : '' },
+                emphasis: { focus: 'series' as const },
+                data: [] as number[]
+            }));
+
+            documents.forEach(docName => {
+                const fullKey = `Sobre os documentos do Global Shapers/WEF [${docName}]`;
+                const levelCounts: { [key: string]: number } = {
+                    'Conheço bastante': 0,
+                    'Já li': 0,
+                    'Já ouvi falar/sei que existe': 0,
+                    'Nunca ouvi falar': 0
+                };
+
+                data.forEach(item => {
+                    const level = item[fullKey];
+                    if (level && levels.includes(level)) {
+                        levelCounts[level]++;
+                    }
+                });
+
+                seriesData.forEach(series => {
+                    series.data.push(levelCounts[series.name]);
+                });
+            });
+
+            return {
+                documents: documents.map(d => d.replace(' (do seu hub)', '')),
+                series: seriesData
+            };
+        })
+    );
+}
 }

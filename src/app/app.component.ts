@@ -11,6 +11,11 @@ import { HubChartComponent } from './hub-chart/hub-chart.component';
 import { MaritalStatusChartComponent } from './marital-status-chart/marital-status-chart.component';
 import { ProfessionalAreasChartComponent } from './professional-areas-chart/professional-areas-chart.component';
 import { RaceChartComponent } from './race-chart/race-chart.component';
+import { SexualOrientationChartComponent } from './sexual-orientation-chart/sexual-orientation-chart.component';
+import { LanguageProficiencyChartComponent } from './language-distribution-chart/language-distribution-chart.component';
+import { HobbiesChartComponent } from './hobbies-chart/hobbies-chart.component';
+import { DocumentsChartComponent } from './documents-chart/documents-chart.component';
+import { FaithChartComponent } from './faith-chart/faith-chart.component';
 
 @Component({
   selector: 'app-root',
@@ -21,14 +26,17 @@ import { RaceChartComponent } from './race-chart/race-chart.component';
     ProfessionalAreasChartComponent,
     GenderIdentityChartComponent,
     RaceChartComponent,
-     HubChartComponent,
+    HubChartComponent,
     AgeChartComponent,
     MaritalStatusChartComponent,
+    HobbiesChartComponent,
     EducationLevelChartComponent,
+    SexualOrientationChartComponent,
+    FaithChartComponent,
+    DocumentsChartComponent,
+    LanguageProficiencyChartComponent,
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent {
-  title = 'cha-ghabryel';
-}
+export class AppComponent {}
